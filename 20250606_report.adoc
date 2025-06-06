@@ -1,0 +1,108 @@
+= Kubernetes（続き）
+
+== Service（リソースの一つ）とは
+* Podの集合を抽象化して公開する役割を持つ。
+* Podの集合に対するDNS名や負荷分散の情報を取りまとめる。
+* セレクターに記載したPodがServiceの対象となる。（ポート番号の指定も必要。）
+
+==== 必要な理由
+理想状態を維持するためにPodは作成や削除を繰り返されるため、永続的な情報ではない。Podの作成や削除のたびにPodに割り振られるIPアドレスが変化するため、利用者が大変。 +
+→ ServiceがDNS名を提供し管理することで、DNS名でアプリケーションを参照できる。
+
+== デバッグとは
+* エラーやバグを見つけて、その原因を修正する作業のこと。
+* Kubernetesのデバッグは、どこで問題が起きているか、どうやって直せばいいかを調べる。
+
+==== 覚えておきたいコマンド
+* あるnamespaceに含まれるPodを表示する
+[source,bash]
+----
+kubectl get po -n [namespace名]
+----
+* すべてのnamespaceに含まれるPodを表示する
+[source,bash]
+----
+kubectl get po -A
+----
+* ラベルで絞ってPodを表示する
+[source,bash]
+----
+kubectl get po --selector run=[オブジェクト名]
+----
+* ノードを表示する（セレクタで絞ることもできる）
+[source,bash]
+----
+kubectl get node
+----
+* 各Podやノードにどんなラベルが付けられているか表示する
+[source,bash]
+----
+kubectl get < po | node > --show-labels
+----
+* アウトプットオプションの種類
+|======
+|オプション　|意味
+|wide　|テーブル形式の出力で、デフォルトのものの他にIPアドレスやノード名（OSのバージョン）も表示する
+|yaml　|人間が読みやすい形式での出力で、specとstatusを確認できる
+|json　|プログラム形式での出力で、特定の情報を取ってくることができる
+|jsonpath　|特定の情報だけ取り出す形式で、jsonとjqコマンドのセット
+|======
+
+== ノードをデバッグする
+* 問題が発生した場合に、ノードが起因しているかどうか判断するために重要。
+
+==== 覚えておきたいコマンド
+* あるPodがどのノードで起動しているか確認する
+[source,bash]
+----
+kubectl get pod [Pod名] -o wide
+----
+* あるノードで起動しているすべてのPodを表示する
+[source,bash]
+----
+kubectl describe node [ノード名]
+----
+
+== Podをデバッグする
+* 問題が発生した場合に、よく使うデバッグの方法。
+
+==== 覚えておきたいコマンド
+* あるPodに着目して、動作の詳細を確認する
+[source,bash]
+----
+kubectl describe pod [Pod名]
+----
+* あるPodに着目して、Podの詳細やエラーメッセージをyaml形式で表示する
+[source,bash]
+----
+kubectl get pod [Pod名] with -o yaml
+----
+* あるPodに着目して、Podのログを確認する
+[source,bash]
+----
+kubectl logs [Pod名] [オプション]
+----
+
+== Serviceをデバッグする
+* アプリケーションの依存先へ接続できない場合に確認が必要。
+
+==== 覚えておきたいコマンド
+* Serviceが正常に動作しているか確認する
+[source,bash]
+----
+kubectl < get | describe > endpoints [Service名]
+----
+* あるServiceがどうして動作していないのかを表示する
+[source,bash]
+----
+kubectl < get | describe > endpoints [Service名]
+----
+* 対応するPodが存在するか確認する
+[source,bash]
+----
+kubectl get po -l run=[Pod名]
+----
+
+== 今後の応用課題
+. LAMP環境をDockerコンテナ上で構築し、DockerHubにプッシュする。
+. プッシュしたDockerイメージをKubernetes上でPodとして運用する。
