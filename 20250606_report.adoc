@@ -15,31 +15,37 @@
 
 ==== 覚えておきたいコマンド
 * あるnamespaceに含まれるPodを表示する
++
 [source,bash]
 ----
 kubectl get po -n [namespace名]
 ----
 * すべてのnamespaceに含まれるPodを表示する
++
 [source,bash]
 ----
 kubectl get po -A
 ----
 * ラベルで絞ってPodを表示する
++
 [source,bash]
 ----
 kubectl get po --selector run=[オブジェクト名]
 ----
 * ノードを表示する（セレクタで絞ることもできる）
++
 [source,bash]
 ----
 kubectl get node
 ----
 * 各Podやノードにどんなラベルが付けられているか表示する
++
 [source,bash]
 ----
 kubectl get < po | node > --show-labels
 ----
 * アウトプットオプションの種類
++
 |======
 |オプション　|意味
 |wide　|テーブル形式の出力で、デフォルトのものの他にIPアドレスやノード名（OSのバージョン）も表示する
@@ -53,11 +59,13 @@ kubectl get < po | node > --show-labels
 
 ==== 覚えておきたいコマンド
 * あるPodがどのノードで起動しているか確認する
++
 [source,bash]
 ----
 kubectl get pod [Pod名] -o wide
 ----
 * あるノードで起動しているすべてのPodを表示する
++
 [source,bash]
 ----
 kubectl describe node [ノード名]
@@ -68,16 +76,19 @@ kubectl describe node [ノード名]
 
 ==== 覚えておきたいコマンド
 * あるPodに着目して、動作の詳細を確認する
++
 [source,bash]
 ----
 kubectl describe pod [Pod名]
 ----
 * あるPodに着目して、Podの詳細やエラーメッセージをyaml形式で表示する
++
 [source,bash]
 ----
 kubectl get pod [Pod名] with -o yaml
 ----
 * あるPodに着目して、Podのログを確認する
++
 [source,bash]
 ----
 kubectl logs [Pod名] [オプション]
@@ -88,16 +99,19 @@ kubectl logs [Pod名] [オプション]
 
 ==== 覚えておきたいコマンド
 * Serviceが正常に動作しているか確認する
++
 [source,bash]
 ----
 kubectl < get | describe > endpoints [Service名]
 ----
 * あるServiceがどうして動作していないのかを表示する
++
 [source,bash]
 ----
 kubectl < get | describe > endpoints [Service名]
 ----
 * 対応するPodが存在するか確認する
++
 [source,bash]
 ----
 kubectl get po -l run=[Pod名]
