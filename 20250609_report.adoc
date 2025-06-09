@@ -1,0 +1,66 @@
+= Kubernetes（続き）
+
+== EKS（Amazon Elastic Kubernetes Service）とは
+* Kubernetesクラスタの操作の複雑性を解消するフルマネージドのサービス。
+
+==== メリット
+* 運用オーバーヘッドを減らして、アプリケーションを素早くデプロイできる。
+* 変化し続けるワークロードの需要に合わせてシームレスに運用できる。
+* AWS統合と自動更新により、セキュリティが向上する。
+
+== eksctl コマンドの基本
+
+==== デフォルトのクラスタの作成
+[source,bash]
+----
+eskctl create cluster
+----
+* 自動生成された名前のクラスタ
+* m5.largeの２台のworkerノードでの構成
+* EC2にはAWS、EKS、AMIが使用される
+* リージョンはus-west-2
+* カスタマイズする場合にはcluster.yamlファイルで詳細設定
+
+== CI/CDとは
+アプリケーションを、素早く頻繁に信頼性を保って改善し、価値をユーザに届けることができる機能。
+
+CI（Continuous Integration） :: ビルドやテストを自動化し品質管理を行う。
+CD（Continuous Delivery/Deployment） :: CIでビルドやテストが行われたものをデプロイし、様々な環境に変更を反映する。
+
+== GitHub Packages
+* Dockerイメージ、npm、RubyGemsなどを保存して公開できる。
+
+== CIの例 : GitHub Actions
+* ワークフローをGitレポジトリにそのまま定義できる。
+* .github/workflowsの下にyaml形式のファイルを作成することで、自動的にワークフローを実行する。
+
+==== yamlファイルの記述項目
+|======
+|on　|トリガー条件（どんな条件で実行するか）
+|jobs　|何を実行するのか
+|runs-on　|OSの指定
+|steps　|ジョブ内の手順
+|======
+
+== CDの例 : ArgoCD
+* Kubernetes用の軽量CDツール。
+* GitのレポジトリとKubetenetesを同期する役割を持っている。（Gitのレポジトリと登録された理想状態を一致させる。）
+
+== ArgoCDのカスタムリソース
+. AppProject : アプリケーションを束ねるグループ。デプロイに関する制限やデプロイ先の設定をする。
+. Application : 何をどこにデプロイするかの定義決め。
+
+==== AppProjectの中身
+|======
+|name　|Project名（グループ名）
+|sourceRepos　|指定のレポジトリ以外からSyncできないような設定
+|destinations　|プロジェクトからデプロイできるクラスタとnamespaceをリストで指定
+|======
+
+==== Applicationの中身
+|======
+|name　|アプリケーション名
+|project　|所属させたいProject名（グループ名）
+|source　|マニフェストyamlファイルを管理しているレポジトリ、リビジョン、パス
+|destination　|デプロイ先のクラスタとnamespace
+|======
