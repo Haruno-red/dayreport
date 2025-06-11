@@ -1,0 +1,93 @@
+= DockerコンテナにおけるLAMP環境の構築
+
+== Dockerのインストール
+. 古いバージョンのDockerをアンインストールする。
++
+[source,yaml]
+----
+sudo apt-get remove docker docker-engine docker.io containerd runc
+----
+
+. Dockerエンジンのインストールをする。今回は、リポジトリのセットアップを利用する。
+.. まずはaptパッケージの更新をする。
++
+[source,yaml]
+----
+sudo apt-get update
+----
+.. 次に必要なパッケージのインストールをする。
++
+[source,yaml]
+----
+sudo apt-get install ca-certificates curl gnupg lsb-release
+----
+.. Dockerの公式GPG鍵を追加する。
++
+[source,yaml]
+----
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
+sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+----
+.. 安定版リポジトリのセットアップを行う。
++
+[source,yaml]
+----
+echo \
+"deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] \
+https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | \
+sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+----
+.. さらに必要なパッケージのインストールをする。
++
+[source,yaml]
+----
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
+----
+
+. rootユーザ以外でDockerを管理するときの設定（参考）
+.. dockerグループを作成する。
++
+[source,yaml]
+----
+sudo groupadd docker
+----
+.. 一般ユーザをdockerグループに追加する。
++
+[source,yaml]
+----
+sudo usermod -aG docker $USER
+----
+.. Linuxマシンを再起動する。
++
+[source,yaml]
+----
+sudo shutdown -r now
+----
+.. dockerコマンドでhello-worldのイメージが実行できるか確認する。（参考）
++
+[source,yaml]
+----
+docker run hello-world
+----
+
+== LAMP環境の構築
+
+今回のLAMP環境の構成は以下のようにする。 +
+　　*L* : Linux（Ubuntu） +
+　　*A* : Apache +
+　　*M* : MySQL +
+　　*P* : PHP
+
+. 作業するディレクトリを作成し、移動する。
++
+[source,yaml]
+----
+mkdir lamp_build
+cd lamp_build
+----
+. Dockerfileを作成する。
++
+[source,yaml]
+----
+vi Dockerfile
+----
