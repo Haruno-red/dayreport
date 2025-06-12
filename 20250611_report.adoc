@@ -76,7 +76,7 @@ docker images
 +
 [source,yaml]
 ----
-docker run docker-lamp -d -p 80:80 -p 3306:3306
+docker run -d -p 80:80 -p 3306:3306 docker-lamp
 ----
 .. bashでログインする。
 +
@@ -88,7 +88,7 @@ docker exec -it [コンテナ名、ID] bash
 +
 [source,yaml]
 ----
-services start mysqld
+service mysql　start
 ----
 .. MySQLにログインできることを確認する。
 +
