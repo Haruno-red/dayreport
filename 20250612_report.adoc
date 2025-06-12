@@ -1,0 +1,166 @@
+= DockerコンテナにおけるLAMP環境の構築（続き）
+
+== Apache、PHPのイメージとMySQLのイメージを別々で作成する場合
+
+. 基本的な手順は https://github.com/Haruno-red/dayreport/blob/main/20250611_report.adoc[Apache、MySQL、PHPを一つのイメージで作成する場合]と同様。（MySQLのイメージでは 3 が不要） +
+そのため、Dockerfileの中身と動作確認方法のみ記載する。
++
+*Apache、PHPのイメージ*
+
+Dockerfileの中身 ::
++
+[source,yaml]
+----
+# ubuntuをベースイメージとして使用する
+FROM ubuntu:latest
+
+# パッケージの更新
+RUN apt update && apt -y upgrade
+
+# Apacheのインストール
+RUN apt-get install -y apache2
+
+# PHPのインストール
+RUN apt-get install -y php php-mysql
+
+# index.htmlというファイルをドキュメントルートディレクトリに追加
+ADD index.html /var/www/html/
+
+# index.phpというファイルをドキュメントルートディレクトリに追加
+ADD index.php /var/www/html/
+
+# 必要なポート（httpの80番）を開く
+EXPOSE 80
+
+# コンテナ起動時にApacheをフォアグラウンドで起動する
+CMD ["/usr/sbin/apache2ctl","-D","FOREGROUND"]
+----
+動作確認方法 ::
+.. コンテナをデタッチドモードで起動する。
++
+[source,yaml]
+----
+docker run -d -p 80:80 docker-web
+----
+.. ブラウザ上で動作を確認する。 +
+ブラウザ上で `http://localhost` と検索し、index.htmlファイルの内容が表示、 +
+`http://localhost/index.php` と検索し、index.phpファイルの内容が表示されたらOK
+
++
+*MySQLのイメージ*
+
+Dockerfileの中身 ::
++
+[source,yaml]
+----
+# ubuntuをベースイメージとして使用する
+FROM ubuntu:latest
+
+# パッケージの更新
+RUN apt update && apt -y upgrade
+
+# MySQLサーバのインストール
+RUN apt-get install -y mysql-server
+
+# 必要なポート（mysqlの3306番）を開く
+EXPOSE 3306
+
+# コンテナ起動時にMySQLをフォアグラウンドで起動する
+CMD ["mysqld"]
+----
+動作確認方法 ::
+.. コンテナをデタッチドモードで起動する。
++
+[source,yaml]
+----
+docker run -d -p 3306:3306 docker-mysql
+----
+.. bashでログインする。
++
+[source,yaml]
+----
+docker exec -it [コンテナ名、ID] bash
+----
+.. MySQLを起動する。
++
+[source,yaml]
+----
+service mysql start
+----
+.. MySQLにログインできることを確認する。
++
+[source,yaml]
+----
+mysql -u root -p
+----
+パスワードが聞かれたらEnterキーを押し、MySQLの画面が出たらOK
+
+. Docker HubにあるイメージからDocker Composeの機能を使用して、同時にコンテナを起動し、LAMP環境を構築する。
+.. 作業するディレクトリを作成し、移動する。
++
+[source,yaml]
+----
+mkdir lamp_compose
+cd lamp_compose
+----
+.. compose.yamlを作成する。
++
+[source,yaml]
+----
+vi compose.yaml
+----
+compose.yamlの中身 ::
++
+[source,yaml]
+----
+services:
+  db:
+    image: harunored/docker-mysql:ver1 # MySQLのイメージ
+    volumes:
+      - mysql_data:/var/lib/mysql # volumeにマウントして永続化
+    ports:
+      - "3306:3306"
+  web:
+    image: harunored/docker-web:ver1 # Apache、PHPのイメージ
+    volumes:
+      - .:/code
+    ports:
+      - "80:80"
+    depends_on:
+      - db      # MySQLを起動してからApacheを起動する
+volumes:
+  mysql_data:
+----
+. 作成したcompose.yamlファイルを使用して動作を確認する。
+.. compose.yamlファイルを使用して、デタッチドモードでコンテナを起動する。
++
+[source,yaml]
+----
+docker-compose up -d
+----
+.. docker composeコマンドでコンテナが起動したことを確認する。
++
+[source,yaml]
+----
+docker compose ps
+----
+.. bashでログインする。
++
+[source,yaml]
+----
+docker exec -it [コンテナ名、ID] bash
+----
+.. MySQLにログインできることを確認する。
++
+[source,yaml]
+----
+mysql -u root -p
+----
+パスワードが聞かれたらEnterキーを押し、MySQLの画面が出たらOK
+.. ブラウザ上で動作を確認する。 +
+ブラウザ上で `http://localhost` と検索し、index.htmlファイルの内容が表示、 +
+`http://localhost/index.php` と検索し、index.phpファイルの内容が表示されたらOK
+
+== 今後の課題
+. Dockerfileの修正
+. MySQLとPHPの動作の検証
