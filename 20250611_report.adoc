@@ -1,0 +1,132 @@
+= DockerコンテナにおけるLAMP環境の構築（続き）
+
+今回のLAMP環境の構成は以下のようにする。 +
+　　*L* : Linux（Ubuntu） +
+　　*A* : Apache +
+　　*M* : MySQL +
+　　*P* : PHP
+
+== Apache、MySQL、PHPを一つのイメージで作成する場合
+. 作業するディレクトリを作成し、移動する。
++
+[source,yaml]
+----
+mkdir lamp_build
+cd lamp_build
+----
+. Dockerfileを作成する。
++
+[source,yaml]
+----
+vi Dockerfile
+----
+Dockerfileの中身 ::
++
+[source,yaml]
+----
+# ubuntuをベースイメージとして使用する
+FROM ubuntu:latest
+
+# パッケージの更新
+RUN apt update && apt -y upgrade
+
+# Apacheのインストール
+RUN apt-get install -y apache2
+
+# MySQLサーバのインストール
+RUN apt-get install -y mysql-server
+
+# PHPのインストール
+RUN apt-get install -y php php-mysql
+
+# index.htmlというファイルをドキュメントルートディレクトリに追加
+ADD index.html /var/www/html/
+# index.phpというファイルをドキュメントルートディレクトリに追加
+ADD index.php /var/www/html/
+
+# 必要なポート（httpの80番、mysqlの3306番）を開く
+EXPOSE 80
+EXPOSE 3306
+
+# コンテナ起動時にApacheをフォアグラウンドで起動する
+CMD ["/usr/sbin/apache2ctl","-D","FOREGROUND"]
+----
+. ApacheやPHPを動作させるときに必要なファイルを用意しておく。（ファイルの中身は任意）
++
+[source,yaml]
+----
+vi index.html
+vi index.php
+----
+. イメージをビルドする。
++
+[source,yaml]
+----
+docker build -t docker-lamp .
+----
+. 作成したイメージから動作を確認する。
+.. Dockerイメージが作成されたことを確認する。
++
+[source,yaml]
+----
+docker images
+----
+作成したdocker-lampという名前のイメージが表示されたらOK
+.. コンテナをデタッチドモードで起動する。
++
+[source,yaml]
+----
+docker run docker-lamp -d -p 80:80 -p 3306:3306
+----
+.. bashでログインする。
++
+[source,yaml]
+----
+docker exec -it [コンテナ名、ID] bash
+----
+.. MySQLを起動する。
++
+[source,yaml]
+----
+services start mysqld
+----
+.. MySQLにログインできることを確認する。
++
+[source,yaml]
+----
+mysql -u root -p
+----
+パスワードが聞かれたらEnterキーを押し、MySQLの画面が出たらOK
+.. ブラウザ上で動作を確認する。 +
+ブラウザ上で `http://localhost` と検索し、index.htmlファイルの内容が表示、 +
+`http://localhost/index.php` と検索し、index.phpファイルの内容が表示されたらOK
+. Docker Hubにイメージをプッシュする。
+.. Docker Hubにログインする。
++
+[source,yaml]
+----
+Docker login -u [ユーザ名]
+----
+パスワードを入力し、Login Succeededと表示されたらOK
+.. イメージにタグ付けする。
++
+[source,yaml]
+----
+docker tag docker-lamp [Docker ID]/[イメージ名]:[タグ名]
+----
+.. イメージをプッシュする。
++
+[source,yaml]
+----
+docker push [Docker ID]/[イメージ名]:[タグ名]
+----
+Docker Hubのページを確認し、表示されていたらOK
+
+== Apache、PHPのイメージとMySQLのイメージを別々で作成する場合
+==== この構成を考えた理由
+前述のDockerイメージだとコンテナ起動時のMySQLの自動起動がなされておらず、手間がかかるため。 +
+また、データベースとWebのページを同じイメージ内に作成するとセキュリティ上、あまり良くないため。
+
+==== 作成の手順
+. Apache、PHPのイメージとMySQLのイメージを別々で作成する。
+. Docker Composeの機能を用いて、MySQLのイメージを起動した後にApacheのイメージを起動するように設定する。
