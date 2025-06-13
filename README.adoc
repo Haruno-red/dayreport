@@ -16,3 +16,4 @@
 * link:https://github.com/Haruno-red/dayreport/blob/main/20250610_report.adoc[Dockerのインストール、LAMP環境の確認]
 * link:https://github.com/Haruno-red/dayreport/blob/main/20250611_report.adoc[一つのイメージで作成する場合の手順書]
 * link:https://github.com/Haruno-red/dayreport/blob/main/20250612_report.adoc[イメージを分けて作成する場合の手順書]
+* link:https://github.com/Haruno-red/dayreport/blob/main/20250613_report.adoc[Dockerfile作成時の注意点]
