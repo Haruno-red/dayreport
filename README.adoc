@@ -1,0 +1,18 @@
+= 学習事項一覧
+
+== Docker
+* link:https://github.com/Haruno-red/dayreport/blob/main/20250529_report.adoc[Docker、イメージ、Docker Hub、タグ、docker runコマンド]
+* link:https://github.com/Haruno-red/dayreport/blob/main/20250530_report.adoc[ビルド、コンテナ、DockerfileにおけるCOPYとADD]
+* link:https://github.com/Haruno-red/dayreport/blob/main/20250602_report.adoc[ネットワーク、データ管理、Docker compose]
+
+== Kubernetes
+* link:https://github.com/Haruno-red/dayreport/blob/main/20250603_report.adoc[Kubernetes、コンテナオーケストレーション、ノードの構成、kubectlコマンド]
+* link:https://github.com/Haruno-red/dayreport/blob/main/20250604_report.adoc[kubectlコマンド、APIリソース、Pod、オブジェクト、Namespace、ReplicaSet]
+* link:https://github.com/Haruno-red/dayreport/blob/main/20250605_report.adoc[Deployment、Job、ConfigMap、Secret]
+* link:https://github.com/Haruno-red/dayreport/blob/main/20250606_report.adoc[Service、デバッグ]
+* link:https://github.com/Haruno-red/dayreport/blob/main/20250609_report.adoc[EKS、CI/CD]
+
+== DockerコンテナにおけるLAMP環境の構築
+* link:https://github.com/Haruno-red/dayreport/blob/main/20250610_report.adoc[Dockerのインストール、LAMP環境の確認]
+* link:https://github.com/Haruno-red/dayreport/blob/main/20250611_report.adoc[一つのイメージで作成する場合の手順書]
+* link:https://github.com/Haruno-red/dayreport/blob/main/20250612_report.adoc[イメージを分けて作成する場合の手順書]
