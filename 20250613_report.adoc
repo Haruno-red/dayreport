@@ -1,0 +1,44 @@
+= DockerコンテナにおけるLAMP環境の構築（続き）
+
+== Dockerfileの訂正
+* `apt-get` コマンドを使用するときは１レイヤで記載する。 +
+（理由）通常のコマンド時と異なり、キャッシュが次のレイヤに引き継がれないため。
+* `apt-get` コマンドのオプションに `--no-install-recommends` を入れる。 +
+（理由）依存パッケージだけでなく、推奨パッケージも自動インストールされてしまうことを防ぐため。
+* `rm -rf /var/lib/apt/lists/*` で読み込んだパッケージリストを削除する。 +
+（理由）イメージをできるだけ軽くするため。
+
+→ できるだけ軽量でコンパクトなイメージを作成し、速く読み込めるようにすることが大事。
+
+Dockerfile（lamp） ::
++
+[source,yaml]
+----
+# ubuntuをベースイメージとして使用する
+FROM ubuntu:latest
+
+# パッケージの更新、必要なパッケージのインストール
+RUN apt update && apt -y install --no-install-recommends \
+    apache2 \
+    mysql-server \
+    php \
+    php-mysql \
+ && rm -rf /var/lib/apt/lists/*
+
+# index.htmlというファイルをドキュメントルートディレクトリに追加
+ADD index.html /var/www/html/
+# index.phpというファイルをドキュメントルートディレクトリに追加
+ADD index.php /var/www/html/
+
+# 必要なポート（httpの80番、mysqlの3306番）を開く
+EXPOSE 80
+EXPOSE 3306
+
+# コンテナ起動時にApacheをフォアグラウンドで起動する
+CMD ["/usr/sbin/apache2ctl","-D","FOREGROUND"]
+----
+
+== マルチステージビルド
+* Dockerfileの中でベースイメージを複数記述する形態。生成された内容を取捨選択して、最終的なイメージを作成する。
+
+→ より軽量かつ最適なイメージのビルドができる。
