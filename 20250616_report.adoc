@@ -1,0 +1,72 @@
+= DockerコンテナにおけるLAMP環境の構築（続き）
+
+== PHPファイル（test.php）の修正
+test.php（PHPファイル） ::
++
+[source,php]
+----
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>PHP MySQL TEST</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+</head>
+
+<body>
+
+<h2>DB接続テスト(PHP MySQL版)</h2>
+
+<?php
+  // エラーを出力する
+  ini_set('display_errors', "On");
+  ini_set('error_reporting', E_ALL & ~E_NOTICE);
+
+  $hostname = "db";
+  $username = "sample_user";
+  $password = "";
+  $dbname = "auth_test";
+  $tbl = "test";
+
+  $connect = mysqli_connect($hostname, $username, $password, $dbname);
+
+  // データ表示
+  $sql = "select * from $tbl";
+  $sqlq = mysqli_query($connect,$sql);
+
+  while($row = mysqli_fetch_array($sqlq)){
+    echo $row["row1"] . " / ";
+    echo $row["row2"] . " / ";
+    echo $row["row3"] . "<br>";
+  }
+
+  mysqli_free_result($sqlq);
+  mysqli_close($connect);
+?>
+
+</body>
+----
+
+== 現在の設定でコンテナ起動後にしなければならないこと
+* MySQL側の設定
++
+[source,yaml]
+----
+mysql -u root -p
+----
+** 「auth_test」というデータベースの中に「test」というテーブルを作成する。
++
+[source,yaml]
+----
+create database auth_test;
+use auth_test;
+create table test(username varchar(10), password varchar(10));
+----
+** 外部から接続できるように、sample_userというユーザを作成する。
++
+[source,yaml]
+----
+create user 'sample_user' identified by '';
+grant all privileges on *.* to 'sample_user'@'%' with grant option;
+----
+
+→ 可能であればこの設定もコンテナ起動時になされている方が良いと思う。
