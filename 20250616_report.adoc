@@ -59,7 +59,7 @@ mysql -u root -p
 ----
 create database auth_test;
 use auth_test;
-create table test(username varchar(10), password varchar(10));
+create table test(id INT AUTO_INCREMENT PRIMARY KEY, name varchar(20), age INT);
 ----
 ** 外部から接続できるように、sample_userというユーザを作成する。
 +
@@ -67,6 +67,12 @@ create table test(username varchar(10), password varchar(10));
 ----
 create user 'sample_user' identified by '';
 grant all privileges on *.* to 'sample_user'@'%' with grant option;
+----
+** testテーブルの中にデータを格納する。
++
+[source,yaml]
+----
+INSERT INTO test(name, age) VALUES ('user1', 25), ('user2', 26);
 ----
 
 → 可能であればこの設定もコンテナ起動時になされている方が良いと思う。
