@@ -1,0 +1,89 @@
+= DockerコンテナにおけるLAMP環境の構築（続き）
+
+== compose.yamlファイルの変更とinit.sqlの作成
+link:https://github.com/Haruno-red/dayreport/blob/main/20250616_report.adoc#%E7%8F%BE%E5%9C%A8%E3%81%AE%E8%A8%AD%E5%AE%9A%E3%81%A7%E3%82%B3%E3%83%B3%E3%83%86%E3%83%8A%E8%B5%B7%E5%8B%95%E5%BE%8C%E3%81%AB%E3%81%97%E3%81%AA%E3%81%91%E3%82%8C%E3%81%B0%E3%81%AA%E3%82%89%E3%81%AA%E3%81%84%E3%81%93%E3%81%A8[現在の設定でコンテナ起動後にしなければならないこと] を解決するためにcompose.yamlファイルの変更と起動時に必要な設定ファイルを作成する。
+
+compose.yamlファイル ::
++
+[source,yaml]
+----
+services:
+  db:
+    image: harunored/docker-mysql:ver1 # MySQLのイメージ
+    environment:
+      MYSQL_ROOT_PASSWORD: password  # rootのパスワードを'password'
+      MYSQL_DATABASE: auth_test  # 'auth_test'というデータベースを作成
+      MYSQL_USER: sample_user  # 'sample_user'というユーザを作成
+      MYSQL_PASSWORD: pass  # ユーザ'sample_user'のパスワードを'pass'
+    volumes:
+      - mysql_data:/var/lib/mysql # volumeにマウントしてデータを永続化
+      - ./mysqld.cnf:/etc/mysql/mysql.conf.d/mysqld.cnf  # 設定ファイルの変更
+      - ./init.sql:/root/init.sql  # データベースの初期設定
+    ports:
+      - "3306:3306"
+  web:
+    image: harunored/docker-web:ver1 # Apache、PHPのイメージ
+    volumes:
+      - .:/code
+      - ./test.php:/var/www/html/test.php  # 動作検証のためのtest.phpファイルをマウント
+    ports:
+      - "80:80"
+    links:
+      - db      # MySQLを起動してからApacheを起動する
+volumes:
+  mysql_data:
+----
+
+init.sqlファイル ::
++
+[source,sql]
+----
+-- データベース auth_test の中に test テーブルを作成
+CREATE TABLE auth_test.test (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	name VARCHAR(20),
+	age INT
+);
+
+-- ユーザ sample_user に外部アクセス権を付与
+GRANT ALL PRIVILEGES ON auth_test.* TO 'sample_user'@'%';
+FLUSH PRIVILEGES;
+
+-- テーブル test にサンプルデータを格納
+INSERT INTO auth_test.test (name, age) VALUES
+	('abc', '25'),
+	('def', '26'),
+	('ghi', '27');
+----
+
+== 確認コマンド（参考）
+* MySQL上でデータベースの一覧を表示する
++
+[source,yaml]
+----
+show DATABASES;
+----
+* MySQLのデータベース内でテーブルの一覧を表示する
++
+[source,yaml]
+----
+show TABLES;
+----
+* MySQLのデータベース内でテーブルのデータ一覧を参照する
++
+[source,yaml]
+----
+SELECT * FROM [テーブル名];
+----
+* MySQL上でユーザの一覧を表示する
++
+[source,yaml]
+----
+SELECT User, HOST FROM mysql.user;
+----
+
+== 今後の課題
+. 公式のMySQLのイメージを使用していないので、volumeマウントができない。 +
+→ MySQL起動後にinit.sqlファイルを読み込むことで解決させる。
+. ファイルの配置、設定内容が正しいかどうかの挙動を確認する。
+. （応用）MySQLの環境が構築済みかどうかのチェックが必要。
