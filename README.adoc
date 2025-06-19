@@ -23,3 +23,4 @@
 * link:https://github.com/Haruno-red/dayreport/blob/main/20250616_report.adoc[PHPファイルの変更、現状の要設定事項]
 * link:https://github.com/Haruno-red/dayreport/blob/main/20250617_report.adoc[MySQLコンテナ起動時の設定ファイル修正、確認コマンド]
 * link:https://github.com/Haruno-red/dayreport/blob/main/20250618_report.adoc[MySQLの初期サンプルデータ設定のためのスクリプト作成]
+* link:https://github.com/Haruno-red/dayreport/blob/main/20250619_report.adoc[MySQLの初期サンプルデータ設定のためのスクリプト作成（更新版）]
