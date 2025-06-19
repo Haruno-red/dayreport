@@ -13,8 +13,13 @@
 * link:https://github.com/Haruno-red/dayreport/blob/main/20250609_report.adoc[EKS、CI/CD]
 
 == DockerコンテナにおけるLAMP環境の構築
+. Dockerの環境整理
 * link:https://github.com/Haruno-red/dayreport/blob/main/20250610_report.adoc[Dockerのインストール、LAMP環境の確認]
+. Dockerイメージの作成と動作確認
 * link:https://github.com/Haruno-red/dayreport/blob/main/20250611_report.adoc[一つのイメージで作成する場合の手順書]
 * link:https://github.com/Haruno-red/dayreport/blob/main/20250612_report.adoc[イメージを分けて作成する場合の手順書]
 * link:https://github.com/Haruno-red/dayreport/blob/main/20250613_report.adoc[Dockerfile作成時の注意点]
+. 動作確認のファイル修正や注意事項
 * link:https://github.com/Haruno-red/dayreport/blob/main/20250616_report.adoc[PHPファイルの変更、現状の要設定事項]
+* link:https://github.com/Haruno-red/dayreport/blob/main/20250617_report.adoc[MySQLコンテナ起動時の設定ファイル修正、確認コマンド]
+* link:https://github.com/Haruno-red/dayreport/blob/main/20250618_report.adoc[MySQLの初期サンプルデータ設定のためのスクリプト作成]
