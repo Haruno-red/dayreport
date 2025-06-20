@@ -2,6 +2,7 @@
 
 == init.sqlファイルを流すためのスクリプト（test.sh）作成
 test.sh内のソースコード ::
++
 [source,bash]
 ----
 #!/bin/bash
