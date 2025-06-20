@@ -2,6 +2,7 @@
 
 == MySQL初期サンプルデータ設定のためのスクリプト（test.sh）の作成
 test.sh内のソースコード ::
++
 [source,bash]
 ----
 #!/bin/bash -eu
