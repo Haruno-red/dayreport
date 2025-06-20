@@ -223,14 +223,280 @@ docker push [Docker ID]/docker-mysql:ver1
 ----
 Docker Hubのページを確認し、表示されていたらOK
 
-== Docker compose機能を利用したコンテナの起動
+== Docker compose機能を利用する準備
+. 作業するディレクトリを作成し、移動する。
++
+[source,yaml]
+----
+cd ..
+mkdir docker_compose
+cd docker_compose
+----
+. compose.yamlを作成する。
++
+[source,yaml]
+----
+vi compose.yaml
+----
+compose.yamlの中身 ::
++
+[source,yaml]
+----
+services:
+  db:
+    image: harunored/docker-mysql:ver1 # MySQLのイメージ
+    volumes:
+      - mysql_data:/var/lib/mysql # volumeにマウントしてデータを永続化
+      - ./mysqld.cnf:/etc/mysql/mysql.conf.d/mysqld.cnf  # 設定ファイルの変更
+      - ./test.sh:/test.sh  # MySQLの初期実行スクリプトをマウント
+    environment:
+      MYSQL_ROOT_PASSWORD: password  # rootのパスワードを'password'
+      MYSQL_DATABASE: auth_test  # 'auth_test'というデータベースを作成
+      MYSQL_USER: sample_user  # 'sample_user'というユーザを作成
+      MYSQL_PASSWORD: pass  # ユーザ'sample_user'のパスワードを'pass'
+    ports:
+      - "3306:3306"
+  web:
+    image: harunored/docker-web:ver1 # Apache、PHPのイメージ
+    volumes:
+      - .:/code
+      - ./test.php:/var/www/html/test.php  # 動作検証のためのtest.phpファイルをマウント
+    ports:
+      - "80:80"
+    links:
+      - db      # MySQLを起動してからApacheを起動する
+volumes:
+  mysql_data:
+----
+. 動作検証時に必要なファイルを用意しておく。今回はMySQLとの接続確認のため、以下の通りとする。
+.. ブラウザ上で表示確認をするためのtest.phpを用意する。
++
+[source,yaml]
+----
+vi test.php
+----
+test.phpファイルの中身 ::
++
+[source,php]
+----
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>PHP MySQL TEST</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+</head>
 
-====
+<body>
+
+<h2>DB接続テスト(PHP MySQL版)</h2>
+
+<?php
+  // エラーを出力する
+  ini_set('display_errors', "On");
+  ini_set('error_reporting', E_ALL & ~E_NOTICE);
+
+  $hostname = "db";
+  $username = "sample_user";
+  $password = "pass";
+  $dbname = "auth_test";
+  $tbl = "test";
+
+  $connect = mysqli_connect($hostname, $username, $password, $dbname);
+
+  // データ表示
+  $sql = "select * from $tbl";
+  $sqlq = mysqli_query($connect,$sql);
+
+  while($row = mysqli_fetch_array($sqlq)){
+    echo $row["id"] . " / ";
+    echo $row["name"] . " / ";
+    echo $row["age"] . "<br>";
+  }
+
+  mysqli_free_result($sqlq);
+  mysqli_close($connect);
+?>
+
+</body>
+----
+.. 別のコンテナからMySQLのデータを参照できるような設定ファイルをマウントするためにmysqld.cnfを用意する。 +
+`bind-address            = 127.0.0.1` と `mysqlx-bind-address     = 127.0.0.1` の行をコメントアウトしたもの。
+.. 初期サンプルデータを流すためのスクリプトtest.shを用意する。
++
+[source,yaml]
+----
+vi test.sh
+----
+test.shファイルの中身 ::
++
+[source,bash]
+----
+#!/bin/bash -eu
+
+readonly SUCCESS="0"
+readonly FAILURE="1"
+
+# 環境変数が設定されているか確認
+function check_env(){
+  local error_message=""
+  if [ -z "${MYSQL_ROOT_PASSWORD}" ]; then
+    error_message="${error_message}Error: 環境変数 MYSQL_ROOT_PASSWORD が設定されていません。\n"
+  fi
+  if [ -z "${MYSQL_USER}" ]; then
+    error_message="${error_message}Error: 環境変数 MYSQL_USER が設定されていません。\n"
+  fi
+  if [ -z "${MYSQL_PASSWORD}" ]; then
+    error_message="${error_message}Error: 環境変数 MYSQL_PASSWORD が設定されていません。\n"
+  fi
+  if [ -z "${MYSQL_DATABASE}" ]; then
+    error_message="${error_message}Error: 環境変数 MYSQL_DATABASE が設定されていません。\n"
+  fi
+  local success=""
+  if [ -z "${error_message}" ]; then
+    echo "Succeeded: 環境変数が設定されています。"
+    return ${SUCCESS}
+  else
+    echo -e "${error_message}"
+    return ${FAILURE}
+  fi
+}
+
+# MySQL実行関数（第一引数：SQL文、第二引数：データベース名）
+function exec_mysql(){
+  if [ $# -eq 1 ]; then
+    mysql --user=root --password=${MYSQL_ROOT_PASSWORD} -e "$1"
+    return ${SUCCESS}
+  elif [ $# -eq 2 ]; then
+    mysql --user=root --password=${MYSQL_ROOT_PASSWORD} -D $2 -e "$1"
+    return ${SUCCESS}
+  else
+    echo "引数の数が正しくありません。"
+    return ${FAILURE}
+  fi
+}
+
+# auth_testというデータベースを作成
+function create_database(){
+  exec_mysql "CREATE DATABASE IF NOT EXISTS \`${MYSQL_DATABASE}\`;"
+  if [ $? -eq 0 ]; then
+    echo "データベース '${MYSQL_DATABASE}' が正常に作成されました。"
+    return ${SUCCESS}
+  else
+    echo "データベース '${MYSQL_DATABASE}' の作成に失敗しました。"
+    return ${FAILURE}
+  fi
+}
+
+# auth_testデータベース内にtestテーブルを作成し、サンプルデータを格納
+function setup_table(){
+  exec_mysql "CREATE TABLE IF NOT EXISTS test (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(20), age INT);" "${MYSQL_DATABASE}"
+  if [ $? -eq ${SUCCESS} ]; then
+    echo "テーブル 'test' が正常に作成されました。"
+    exec_mysql "INSERT INTO test (name, age) VALUES ('abc', '25'), ('def', '26'), ('ghi', '27');" "${MYSQL_DATABASE}"
+    if [ $? -eq ${SUCCESS} ]; then
+      echo "テーブル 'test' のデータが更新されました。"
+      return ${SUCCESS}
+    else
+      echo "テーブル 'test' のデータが更新できませんでした。"
+      return ${FAILURE}
+    fi
+  else
+    echo "テーブル 'test' の作成に失敗しました。"
+    return ${FAILURE}
+  fi
+}
+
+# 外部からの接続を許可したsample_userというユーザを作成
+function create_user(){
+  exec_mysql "CREATE USER '${MYSQL_USER}' identified by '${MYSQL_PASSWORD}';"
+  exec_mysql "GRANT ALL PRIVILEGES ON \`${MYSQL_DATABASE}\`.test TO '${MYSQL_USER}'@'%' WITH GRANT OPTION;"
+  if [ $? -eq ${SUCCESS} ]; then
+    echo "ユーザ '${MYSQL_USER}' が正常に作成されました。"
+    return ${SUCCESS}
+  else
+    echo "ユーザ '${MYSQL_USER}' の作成に失敗しました。"
+    return ${FAILURE}
+  fi
+}
 
 
+function main(){
+  check_env
+  create_database
+  setup_table
+  create_user
+}
 
+main
+----
 
+== コンテナの起動
+. docker composeの機能を利用してコンテナをデタッチドモードで起動する。
++
+[source,yaml]
+----
+docker container up -d
+----
+. コンテナが２台起動したか確認する。
++
+[source,yaml]
+----
+docker container ls -a
+----
+. MySQLのコンテナにbashでログインする。
++
+[source,yaml]
+----
+docker exec -it [コンテナ ID] bash
+----
+. test.shを実行する。
++
+[source,bash]
+----
+./test.sh
+----
 
-
+== 動作確認
+. MySQLの初期サンプルデータが正しく作成されているか確認する。
+.. MySQLにログインする。
++
+[source,bash]
+----
+mysql -u root -p
+----
+パスワードが聞かれたらEnterキーを押し、MySQLの画面が出たらOK
+.. データベース `auth_test` が作成されているか。
++
+[source,bash]
+----
+show DATABASES;
+----
+データベースの一覧に `auth_test` が表示されていたらOK
+.. データベース `auth_test` 内にテーブル `test` が作成されているか。
++
+[source,bash]
+----
+use auth_test;
+show TABLES;
+----
+テーブルの一覧に `test` が表示されていたらOK
+.. テーブル `test` 内のデータが格納されているか。
+[source,bash]
++
+----
+SELECT * FROM test;
+----
+`ID` 、 `name` 、 `age` の一覧が表示されたらOK
+.. ユーザ `sample_user` が作成されていて、外部からの接続権限が与えられているか。
++
+[source,bash]
+----
+SELECT user, HOST FROM mysql.user;
+----
+ユーザの一覧に `sample_user` が表示され、hostの欄に `%` が表示されていたらOK
+. ブラウザにhtmlファイルやphpファイルが正しく表示されるか確認する。
+.. ブラウザ上で `http://localhost:8000` と検索し、index.htmlファイルの内容が表示されたらOK
+.. ブラウザ上で `http://localhost:8000/index.php` と検索し、index.phpファイルの内容が表示されたらOK
+.. ブラウザ上で `http://localhost:8000/test.php` と検索し、MySQLに設定したサンプルデータが表示されたらOK
 
 
